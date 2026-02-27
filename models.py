@@ -15,7 +15,7 @@ class Color(Base):
     status = Column(String, default="open")
     # open / threshold_reached / closed
 
-    threshold_reached_at = Column(DateTime, nullable=True)
+# threshold_reached_at = Column(DateTime, nullable=True)
 
     orders = relationship("Order", back_populates="color")
 
