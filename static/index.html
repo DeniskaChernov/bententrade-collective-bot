@@ -1,10 +1,195 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Bententrade Collective</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bententrade Collective</title>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+}
+
+.container {
+    padding: 20px;
+}
+
+h1 {
+    font-size: 22px;
+    margin-bottom: 20px;
+}
+
+.card {
+    background: #1e293b;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+}
+
+.progress-bar {
+    height: 8px;
+    background: #334155;
+    border-radius: 6px;
+    margin: 10px 0;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #f59e0b;
+    transition: 0.4s;
+}
+
+.status {
+    font-weight: bold;
+    margin: 8px 0;
+}
+
+.status.open { color: #facc15; }
+.status.waiting_24h { color: #22c55e; }
+.status.closed { color: #ef4444; }
+
+button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    font-weight: bold;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: #22c55e;
+    color: black;
+}
+
+.btn-disabled {
+    background: gray;
+    cursor: not-allowed;
+}
+
+.timer {
+    font-size: 13px;
+    color: #94a3b8;
+}
+</style>
 </head>
+
 <body>
-    <h1>Коллективный заказ Bententrade</h1>
-    <p>WebApp работает.</p>
+
+<div class="container">
+    <h1>🔥 Коллективный заказ Bententrade</h1>
+    <div id="colors"></div>
+</div>
+
+<script>
+const API = "";
+
+async function loadColors() {
+    const response = await fetch(API + "/colors");
+    const colors = await response.json();
+    const container = document.getElementById("colors");
+    container.innerHTML = "";
+
+    colors.forEach(color => {
+        const percent = Math.min((color.total_weight / 100) * 100, 100);
+
+        let statusText = "";
+        if (color.status === "open") {
+            statusText = "Сбор открыт";
+        }
+        if (color.status === "waiting_24h") {
+            statusText = "Минимальный объём набран! Ждём 24 часа.";
+        }
+        if (color.status === "closed") {
+            statusText = "Заказ закрыт. Производство запущено.";
+        }
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+            <h3>${color.name}</h3>
+            <p>${color.description}</p>
+
+            <div class="progress-bar">
+                <div class="progress-fill" style="width:${percent}%"></div>
+            </div>
+
+            <div>${color.total_weight} / 100 кг</div>
+
+            <div class="status ${color.status}">
+                ${statusText}
+            </div>
+
+            ${color.status === "waiting_24h" ? `<div class="timer" id="timer-${color.id}"></div>` : ""}
+
+            <button id="btn-${color.id}" class="btn-primary">
+                Добавить заказ
+            </button>
+        `;
+
+        container.appendChild(card);
+
+        const button = document.getElementById(`btn-${color.id}`);
+
+        if (color.status === "closed") {
+            button.classList.remove("btn-primary");
+            button.classList.add("btn-disabled");
+            button.disabled = true;
+        }
+
+        button.onclick = () => addOrder(color.id);
+
+        if (color.status === "waiting_24h") {
+            startTimer(color.id);
+        }
+    });
+}
+
+async function addOrder(colorId) {
+    const weight = prompt("Сколько кг хотите заказать?");
+    if (!weight) return;
+
+    await fetch(API + "/add_order?user_id=test_user&color_id=" + colorId + "&weight=" + weight, {
+        method: "POST"
+    });
+
+    loadColors();
+}
+
+function startTimer(colorId) {
+    const timerEl = document.getElementById("timer-" + colorId);
+    if (!timerEl) return;
+
+    const endTime = new Date();
+    endTime.setHours(endTime.getHours() + 24);
+
+    setInterval(() => {
+        const now = new Date();
+        const diff = endTime - now;
+
+        if (diff <= 0) {
+            timerEl.innerText = "Ожидание завершено";
+            return;
+        }
+
+        const hours = Math.floor(diff / 1000 / 60 / 60);
+        const minutes = Math.floor((diff / 1000 / 60) % 60);
+
+        timerEl.innerText = `Закроется через ${hours} ч ${minutes} мин`;
+    }, 60000);
+}
+
+loadColors();
+</script>
+
 </body>
 </html>
