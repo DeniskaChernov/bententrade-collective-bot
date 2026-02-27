@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin — Bententrade</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div class="container">
+
+    <div id="loginSection">
+        <h2>Вход в админку</h2>
+        <input type="text" id="adminUser" placeholder="Логин">
+        <input type="password" id="adminPass" placeholder="Пароль">
+        <button onclick="adminLogin()">Войти</button>
+    </div>
+
+    <div id="adminPanel" class="hidden">
+
+        <h2>Управление партиями</h2>
+
+        <div class="card">
+            <h3>Добавить новый цвет</h3>
+            <input type="text" id="article" placeholder="Артикул">
+            <input type="text" id="name" placeholder="Название">
+            <input type="text" id="format" placeholder="Формат">
+            <input type="text" id="imageUrl" placeholder="Ссылка на изображение">
+            <button onclick="addColor()">Добавить</button>
+        </div>
+
+        <h3>Активные партии</h3>
+        <div id="adminColors"></div>
+
+    </div>
+
+</div>
+
+<script src="/static/admin.js"></script>
+
+</body>
+</html>
