@@ -6,15 +6,11 @@ from sqlalchemy.orm import Session
 from database import engine, SessionLocal
 from models import Base, Color, Order
 
+# СОЗДАЁМ ТАБЛИЦЫ СРАЗУ ПРИ ЗАПУСКЕ
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
-
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
-@app.on_event("startup")
-def startup():
-    # Создание таблиц при старте
-    Base.metadata.create_all(bind=engine)
 
 
 # Dependency
@@ -33,7 +29,7 @@ async def root():
 
 @app.post("/add_color")
 def add_color(name: str, description: str, db: Session = Depends(get_db)):
-    color = Color(name=name, description=description)
+    color = Color(name=name, description=description, status="open")
     db.add(color)
     db.commit()
     db.refresh(color)
@@ -50,11 +46,11 @@ def add_order(user_id: str, color_id: int, weight: float, db: Session = Depends(
         o.weight for o in db.query(Order).filter(Order.color_id == color_id).all()
     )
 
-    if total_weight >= 100:
-        color = db.query(Color).filter(Color.id == color_id).first()
-        if color.status == "open":
-            color.status = "waiting_24h"
-            db.commit()
+    color = db.query(Color).filter(Color.id == color_id).first()
+
+    if total_weight >= 100 and color.status == "open":
+        color.status = "waiting_24h"
+        db.commit()
 
     return {"status": "order_added", "total_weight": total_weight}
 
