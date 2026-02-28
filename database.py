@@ -4,6 +4,11 @@ from sqlalchemy.orm import sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+# Если переменная не задана (локальный запуск)
+if not DATABASE_URL:
+    DATABASE_URL = "sqlite:///./local.db"
+
+# Railway старый формат
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 

@@ -13,13 +13,13 @@ from models import Base, Color, Order
 
 # ---------------- CONFIG ----------------
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
+BOT_TOKEN = None
+ADMIN_CHAT_ID = None
 
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "1234"
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = "supersecret"
 ALGORITHM = "HS256"
 
 # ---------------- INIT ----------------
@@ -29,7 +29,11 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-app.mount("/", StaticFiles(directory="static", html=True), name="root")
+from fastapi.responses import FileResponse
+
+@app.get("/")
+def root():
+    return FileResponse("static/index.html")
 
 security = HTTPBearer()
 

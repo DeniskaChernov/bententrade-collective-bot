@@ -1,5 +1,4 @@
 const tg = window.Telegram?.WebApp;
-
 const userId = tg?.initDataUnsafe?.user?.id?.toString() || "guest";
 
 let colors = [];
@@ -17,11 +16,7 @@ function updateCartBar() {
     document.getElementById("cartTotalKg").innerText = totalKg;
 
     const bar = document.getElementById("cartBar");
-    if (totalKg > 0) {
-        bar.classList.remove("hidden");
-    } else {
-        bar.classList.add("hidden");
-    }
+    totalKg > 0 ? bar.classList.remove("hidden") : bar.classList.add("hidden");
 }
 
 // ---------------- COUNTDOWN ----------------
@@ -30,7 +25,6 @@ function formatTime(seconds) {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-
     return `${h}ч ${m}м ${s}с`;
 }
 
@@ -46,7 +40,18 @@ function renderColors() {
     const container = document.getElementById("colorsContainer");
     container.innerHTML = "";
 
+    if (colors.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>Активных партий пока нет</h3>
+                <p>Посмотрите каталог доступных цветов ниже</p>
+            </div>
+        `;
+        return;
+    }
+
     colors.forEach(color => {
+
         const percent = Math.min(
             (color.total_weight / color.min_weight) * 100,
             100
@@ -58,7 +63,7 @@ function renderColors() {
         if (color.status === "waiting_24h" && color.remaining_seconds > 0) {
             countdownHtml = `
                 <div class="countdown">
-                    Закрытие через: 
+                    Закрытие через:
                     <span id="timer-${color.id}">
                         ${formatTime(color.remaining_seconds)}
                     </span>
@@ -69,10 +74,15 @@ function renderColors() {
         let buttonHtml = "";
 
         if (color.status === "closed") {
-            buttonHtml = `<div class="countdown">Производство запущено</div>`;
+            buttonHtml = `
+                <div class="status-text">
+                    Производство запущено
+                </div>
+            `;
         } else {
             buttonHtml = `
-                <button onclick="addToCart(${color.id})">
+                <button class="button"
+                        onclick="addToCart(${color.id})">
                     +5 кг
                 </button>
             `;
@@ -80,33 +90,39 @@ function renderColors() {
 
         container.innerHTML += `
             <div class="card ${glow}">
-                <img src="${color.image_url || 'https://picsum.photos/400/200'}">
-                <div class="card-title">
-                    ${color.article} — ${color.name}
-                </div>
-                <div class="card-format">
-                    ${color.format}
+                <div class="card-image">
+                    <img src="${color.image_url || '/static/images/placeholder.jpg'}">
                 </div>
 
-                <div class="progress">
-                    <div class="progress-fill" 
-                         style="width:${percent}%">
+                <div class="card-content">
+                    <div class="card-title">
+                        ${color.article} — ${color.name}
                     </div>
-                </div>
 
-                <div class="progress-text">
-                    Собрано ${color.total_weight} / ${color.min_weight} кг
-                </div>
-
-                ${color.user_weight > 0 ? `
-                    <div class="user-contribution">
-                        Ваш вклад: ${color.user_weight} кг
+                    <div class="card-sub">
+                        ${color.format}
                     </div>
-                ` : ""}
 
-                ${countdownHtml}
+                    <div class="progress">
+                        <div class="progress-fill"
+                             style="width:${percent}%">
+                        </div>
+                    </div>
 
-                ${buttonHtml}
+                    <div class="card-sub">
+                        Собрано ${color.total_weight} / ${color.min_weight} кг
+                    </div>
+
+                    ${color.user_weight > 0 ? `
+                        <div class="user-contribution">
+                            Ваш вклад: ${color.user_weight} кг
+                        </div>
+                    ` : ""}
+
+                    ${countdownHtml}
+
+                    ${buttonHtml}
+                </div>
             </div>
         `;
     });
@@ -139,11 +155,9 @@ function startCountdowns() {
     });
 }
 
-
 // ---------------- CART LOGIC ----------------
 
 function addToCart(colorId) {
-
     const existing = cart.find(i => i.color_id === colorId);
 
     if (existing) {
@@ -172,15 +186,10 @@ function increaseWeight(index) {
 
 function decreaseWeight(index) {
     cart[index].weight -= 5;
-
-    if (cart[index].weight <= 0) {
-        cart.splice(index, 1);
-    }
-
+    if (cart[index].weight <= 0) cart.splice(index, 1);
     saveCart();
     renderCart();
 }
-
 
 // ---------------- CART MODAL ----------------
 
@@ -198,9 +207,7 @@ function renderCart() {
     container.innerHTML = "";
 
     cart.forEach((item, index) => {
-
         const color = colors.find(c => c.id === item.color_id);
-
         if (!color) return;
 
         container.innerHTML += `
@@ -210,9 +217,12 @@ function renderCart() {
                 </div>
 
                 <div class="cart-item-controls">
-                    <button onclick="increaseWeight(${index})">+</button>
-                    <button onclick="decreaseWeight(${index})">-</button>
-                    <button onclick="removeFromCart(${index})">✕</button>
+                    <button class="button small"
+                        onclick="increaseWeight(${index})">+</button>
+                    <button class="button small"
+                        onclick="decreaseWeight(${index})">-</button>
+                    <button class="button small danger"
+                        onclick="removeFromCart(${index})">✕</button>
                 </div>
             </div>
         `;
@@ -223,14 +233,12 @@ function renderCart() {
 
 function openCheckout() {
     if (cart.length === 0) return;
-
     document.getElementById("checkoutModal").classList.remove("hidden");
 }
 
 function closeCheckout() {
     document.getElementById("checkoutModal").classList.add("hidden");
 }
-
 
 // ---------------- CONFIRM ORDER ----------------
 
@@ -242,7 +250,7 @@ async function confirmOrder() {
     const address = document.getElementById("address").value.trim();
     const deliveryMethod = document.getElementById("deliveryMethod").value;
 
-    if (!firstName || !lastName || !phone) {
+    if (!firstName || !phone) {
         alert("Заполните обязательные поля");
         return;
     }
@@ -257,34 +265,28 @@ async function confirmOrder() {
         items: cart,
         first_name: firstName,
         last_name: lastName,
-        phone: phone,
-        address: address,
+        phone,
+        address,
         delivery_method: deliveryMethod
     };
 
     try {
-
         const res = await fetch("/api/confirm", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
 
         const data = await res.json();
 
         if (res.ok) {
-
             cart = [];
             saveCart();
-
             closeCheckout();
             closeCart();
-
             await loadColors();
 
-            alert("Ваш заказ принят. Менеджер свяжется с вами для подтверждения.");
+            alert("Ваш заказ принят.");
 
             if (tg) {
                 tg.HapticFeedback.notificationOccurred("success");
@@ -294,16 +296,14 @@ async function confirmOrder() {
             alert(data.detail || "Ошибка при оформлении");
         }
 
-    } catch (e) {
+    } catch {
         alert("Ошибка соединения с сервером");
     }
 }
 
-
 // ---------------- AUTO REFRESH ----------------
 
 setInterval(loadColors, 10000);
-
 
 // ---------------- INIT ----------------
 
